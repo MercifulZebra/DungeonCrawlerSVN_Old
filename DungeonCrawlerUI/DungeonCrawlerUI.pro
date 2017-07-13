@@ -16,11 +16,13 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     project.cpp \
     map.cpp \
-    tile.cpp
+    tile.cpp \
+    logger.cpp
 
 HEADERS  += mainwindow.h \
     project.h \
     map.h \
-    tile.h
+    tile.h \
+    logger.h
 
 FORMS    += mainwindow.ui
