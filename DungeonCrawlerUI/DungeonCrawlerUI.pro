@@ -26,3 +26,7 @@ HEADERS  += mainwindow.h \
     logger.h
 
 FORMS    += mainwindow.ui
+
+DISTFILES += \
+    config.txt
+

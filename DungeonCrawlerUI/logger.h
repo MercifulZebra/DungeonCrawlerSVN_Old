@@ -15,18 +15,6 @@ enum LogType {
     LOG_ERROR
 };
 
-class LogItem : QObject
-{
-    Q_OBJECT
-
-public:
-    LogItem(QObject *parent = 0);
-
-    LogType type;
-    QString msg;
-
-    bool used_flag;
-};
 
 class Logger : QObject
 {
@@ -35,7 +23,6 @@ class Logger : QObject
 public:
     Logger(QObject *parent = 0);
     bool init(QString config);
-    bool allocateItems(int num);
 
     void trace(QString nMsg);
     void debug(QString nMsg);
@@ -43,13 +30,10 @@ public:
     void warn(QString nMsg);
     void err(QString nMsg);
 
-    QStringList getLogString();
-    QString getLogError();
+    QString getLogString();
 
-    QVector<LogItem*> log;
-    QVector<LogItem*> log_pool;
+    QString log;
     QString configFilename;
-    int numAllocated_items;
 
     bool error_flag;
 };
