@@ -3,6 +3,10 @@
 
 #include <QWidget>
 
+namespace logger {
+class Logger;
+}
+
 namespace Ui {
 class HomeScreen;
 }
@@ -15,11 +19,19 @@ public:
     explicit HomeScreen(QWidget *parent = 0);
     ~HomeScreen();
 
-    bool init();
+    bool init(logger::Logger *nLog);
     bool initStyle(QPalette p);
+
+    void clearNewProject();
+    void updateRecentProjects();
+    void prepareHomeScreen();
+
+private slots:
 
 private:
     Ui::HomeScreen *ui;
+
+    logger::Logger *log;
 };
 
 #endif // HOMESCREEN_H

@@ -18,14 +18,16 @@ SOURCES += main.cpp\
     map.cpp \
     tile.cpp \
     logger.cpp \
-    homescreen.cpp
+    homescreen.cpp \
+    flatbutton.cpp
 
 HEADERS  += mainwindow.h \
     project.h \
     map.h \
     tile.h \
     logger.h \
-    homescreen.h
+    homescreen.h \
+    flatbutton.h
 
 FORMS    += mainwindow.ui \
     homescreen.ui

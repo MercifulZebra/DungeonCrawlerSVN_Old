@@ -45,7 +45,7 @@ bool MainWindow::init(QString config_filename) {
 
         log->debug("Starting HomeScreen Initialization.");
         homeScreen = new HomeScreen(this);
-        if (!homeScreen->init()) {
+        if (!homeScreen->init(log)) {
             initSuccess_flag = false;
         }
 
@@ -57,6 +57,7 @@ bool MainWindow::init(QString config_filename) {
         updateStyle();
 
         if (initSuccess_flag) {
+            homeScreen->prepareHomeScreen();
             setCentralWidget(homeScreen);
         }
     }
