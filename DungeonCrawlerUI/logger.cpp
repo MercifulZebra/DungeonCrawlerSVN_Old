@@ -23,8 +23,6 @@ bool Logger::init(QString config) {
     configFilename = config;
     QFile configFile(configFilename);
 
-    qDebug() << QDir::current();
-
     if (configFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
         fileOpen_flag = true;
 
@@ -40,41 +38,41 @@ bool Logger::init(QString config) {
 void Logger::trace(QString nMsg) {
 
     if (!error_flag) {
-        QString logMsg("TRACE - " + nMsg + "\n");
-        log.append(logMsg);
+        QString logMsg("TRACE - " + nMsg);
         qDebug().noquote() << logMsg;
+        log.append(logMsg + "\n");
     }
 }
 
 void Logger::debug(QString nMsg) {
     if (!error_flag) {
-        QString logMsg("DEBUG - " + nMsg + "\n");
-        log.append(logMsg);
+        QString logMsg("DEBUG - " + nMsg);
         qDebug().noquote() << logMsg;
+        log.append(logMsg + "\n");
     }
 }
 
 void Logger::info(QString nMsg) {
     if (!error_flag) {
-        QString logMsg("INFO - " + nMsg + "\n");
-        log.append(logMsg);
+        QString logMsg("INFO - " + nMsg);
         qDebug().noquote() << logMsg;
+        log.append(logMsg + "\n");
     }
 }
 
 void Logger::warn(QString nMsg) {
     if (!error_flag) {
-        QString logMsg("WARN - " + nMsg + "\n");
-        log.append(logMsg);
+        QString logMsg("WARN - " + nMsg);
         qDebug().noquote() << logMsg;
+        log.append(logMsg + "\n");
     }
 }
 
 void Logger::err(QString nMsg) {
     if (!error_flag) {
-        QString logMsg("ERROR - " + nMsg + "\n");
-        log.append(logMsg);
+        QString logMsg("ERROR - " + nMsg);
         qDebug().noquote() << logMsg;
+        log.append(logMsg + "\n");
     }
 }
 

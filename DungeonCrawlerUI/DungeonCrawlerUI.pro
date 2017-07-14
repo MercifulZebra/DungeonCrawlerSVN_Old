@@ -17,15 +17,18 @@ SOURCES += main.cpp\
     project.cpp \
     map.cpp \
     tile.cpp \
-    logger.cpp
+    logger.cpp \
+    homescreen.cpp
 
 HEADERS  += mainwindow.h \
     project.h \
     map.h \
     tile.h \
-    logger.h
+    logger.h \
+    homescreen.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    homescreen.ui
 
 DISTFILES += \
     config.txt
