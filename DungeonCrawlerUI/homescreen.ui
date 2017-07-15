@@ -222,7 +222,7 @@
                 </spacer>
                </item>
                <item row="2" column="0" alignment="Qt::AlignLeft">
-                <widget class="QPushButton" name="pushButton">
+                <widget class="FlatButton" name="openBrowseButton">
                  <property name="minimumSize">
                   <size>
                    <width>100</width>
@@ -230,9 +230,7 @@
                   </size>
                  </property>
                  <property name="styleSheet">
-                  <string notr="true">QPushButton {background-color:green;}
-                  QPushButton:pressed {background-color:red;}
-                  QPushButton:hover:!pressed {background-color:white;}</string>
+                  <string notr="true"/>
                  </property>
                  <property name="text">
                   <string>Browse...</string>
@@ -284,6 +282,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>FlatButton</class>
+   <extends>QPushButton</extends>
+   <header>flatbutton.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

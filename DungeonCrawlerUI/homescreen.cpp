@@ -4,6 +4,7 @@
 #include "logger.h"
 #include "flatbutton.h"
 
+#include <QDebug>
 #include <QStackedWidget>
 
 HomeScreen::HomeScreen(QWidget *parent) :
@@ -30,6 +31,14 @@ bool HomeScreen::init(logger::Logger *nLog) {
 bool HomeScreen::initStyle(QPalette p) {
     bool styleSuccess_flag = true;
 
+    setPalette(p);
+
+    ui->openBrowseButton->setFlatStyle();
+    ui->openBrowseButton->setStandardColor(p.alternateBase().color());
+    ui->openBrowseButton->setHoverColor(p.base().color());
+
+    qDebug()<< ui->openBrowseButton->styleSheet();
+
     return styleSuccess_flag;
 }
 
@@ -44,8 +53,6 @@ void HomeScreen::clearNewProject() {
 }
 
 void HomeScreen::updateRecentProjects() {
-    FlatButton *nFlat = new FlatButton(palette(), ui->recentProjectContainer);
-    ui->recentProjectContainer->layout()->addWidget(nFlat);
 }
 
 void HomeScreen::prepareHomeScreen() {

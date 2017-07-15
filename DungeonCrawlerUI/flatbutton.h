@@ -9,11 +9,13 @@ class FlatButton : public QPushButton
 {
     Q_OBJECT
 public:
-    explicit FlatButton(QPalette nPalette, QWidget *parent = 0);
+    explicit FlatButton(QWidget *parent = 0);
 
+    void setFlatStyle();
+    void setStandardColor(QColor nColor);
+    void setHoverColor(QColor nColor);
+    void setPressedColor(QColor nColor);
 
-private:
-    QPalette thisPalette;
 signals:
 
 public slots:
