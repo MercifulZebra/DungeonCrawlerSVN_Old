@@ -5,19 +5,26 @@
 
 //Screen
 #include "homescreen.h"
+#include "mapview.h"
+#include "mapwindow.h"
 
 //Project objects
 #include "project.h"
 
 //QT Objects
 #include <QApplication>
+#include <QStackedWidget>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     log(NULL),
     activeProject(NULL),
-    homeScreen(NULL)
+    mainStack(NULL),
+    homeScreen(NULL),
+    mapView(NULL),
+    homeScreen_index(-1),
+    mapScreen_index(-1)
 {
     ui->setupUi(this);
 }
@@ -41,6 +48,9 @@ bool MainWindow::init(QString config_filename) {
     if (log->init("config.txt")) {
         log->info("Successfully initialized Logger.");
 
+        log->debug("Initializing Main Stack Widget.");
+        mainStack = new QStackedWidget(this);
+        setCentralWidget(mainStack);
 
 
         log->debug("Starting HomeScreen Initialization.");
@@ -49,16 +59,20 @@ bool MainWindow::init(QString config_filename) {
             initSuccess_flag = false;
         }
 
-
-
-
+        log->debug("Starting MapView Initialization.");
+        mapView = new MapView(this);
+        mapView->initView(config_filename, log);
 
         log->debug("Starting Style initialization.");
         updateStyle();
 
         if (initSuccess_flag) {
             homeScreen->prepareHomeScreen();
-            setCentralWidget(homeScreen);
+
+            homeScreen_index = mainStack->addWidget(homeScreen);
+            mapScreen_index = mainStack->addWidget(mapView);
+
+            mainStack->setCurrentIndex(mapScreen_index);
         }
     }
     else {

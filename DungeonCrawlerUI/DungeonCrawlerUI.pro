@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui opengl
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -19,7 +19,9 @@ SOURCES += main.cpp\
     tile.cpp \
     logger.cpp \
     homescreen.cpp \
-    flatbutton.cpp
+    flatbutton.cpp \
+    mapview.cpp \
+    mapwindow.cpp
 
 HEADERS  += mainwindow.h \
     project.h \
@@ -27,10 +29,13 @@ HEADERS  += mainwindow.h \
     tile.h \
     logger.h \
     homescreen.h \
-    flatbutton.h
+    flatbutton.h \
+    mapview.h \
+    mapwindow.h
 
 FORMS    += mainwindow.ui \
-    homescreen.ui
+    homescreen.ui \
+    mapview.ui
 
 DISTFILES += \
     config.txt

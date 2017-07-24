@@ -8,8 +8,11 @@ namespace logger {
 }
 
 class HomeScreen;
+class MapView;
 
 class Project;
+
+class QStackedWidget;
 
 namespace Ui {
 class MainWindow;
@@ -35,9 +38,15 @@ private:
 
     logger::Logger      *log;
     Project             *activeProject;
+    QStackedWidget      *mainStack;
 
     //Screens
     HomeScreen          *homeScreen;
+    MapView             *mapView;
+
+    //Screen Indexes
+    int                  homeScreen_index;
+    int                  mapScreen_index;
 
 };
 

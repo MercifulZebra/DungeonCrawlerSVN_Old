@@ -17,14 +17,12 @@ error_flag(false)
 
 bool Logger::init(QString config) {
     bool initSuccess_flag = true;
-    bool fileOpen_flag = false;
 
     //Look For config Options
     configFilename = config;
     QFile configFile(configFilename);
 
     if (configFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        fileOpen_flag = true;
 
         configFile.close();
     }
