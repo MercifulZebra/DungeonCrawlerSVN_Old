@@ -2,10 +2,23 @@
 #define TILE_H
 
 #include <QObject>
+#include <QRect>
 
 namespace logger {
     class Logger;
 }
+/*
+ * Tile Types
+ */
+
+//Straight Wall
+//Inside Corner Wall
+//Outside Corner Wall
+//Double Inside Corner
+//LeftWallRightCorner
+//RightWallLeftCorner
+//Straight Tunnel
+//Corner Tunnel
 
 class Tile : public QObject
 {
@@ -15,9 +28,12 @@ public:
 
     bool init(logger::Logger *nLog);
 
+    QRect getBoundingBox();
+    void setBoundingBox(QRect nRect);
 private:
 
     logger::Logger *log;
+    QRect           boundingBox;
 
 signals:
 

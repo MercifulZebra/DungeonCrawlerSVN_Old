@@ -1,6 +1,8 @@
 #include "tile.h"
 
-Tile::Tile(QObject *parent) : QObject(parent)
+Tile::Tile(QObject *parent) : QObject(parent),
+    log(NULL),
+    boundingBox()
 {
 
 }
@@ -11,4 +13,12 @@ bool Tile::init(logger::Logger *nLog) {
     log = nLog;
 
     return initSuccess_flag;
+}
+
+QRect Tile::getBoundingBox() {
+    return boundingBox;
+}
+
+void Tile::setBoundingBox(QRect nRect) {
+    boundingBox = nRect;
 }
