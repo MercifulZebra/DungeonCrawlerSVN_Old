@@ -22,7 +22,16 @@ public:
 
     bool initWindow(QString config_filename, logger::Logger *nLog);
 
+    void mousePressEvent(QMouseEvent *e) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *e) override;
+    void wheelEvent(QWheelEvent *e) override;
+
+    void handleMouseMove(QMouseEvent *e);
+    void handleMoveLocation(QMouseEvent *e);
+    void handleRightMouseMove(QMouseEvent *e);
+    void handleShiftMouseMove(QMouseEvent *e);
+    void handleControlMouseMove(QMouseEvent *e);
 
     void paintEvent(QPaintEvent *e) override;
     void paintThis(QPainter *painter, QPaintEvent *pEvent);
@@ -31,24 +40,30 @@ public:
     void paintTiles(QPainter *painter);
 
     bool changeSize(int nWidth, int nHeight, bool force_flag = false);
+    int getTileArraySize();
 
 private:
     bool setDimensions(int nRows, int nCols);
+
+    Tile* getNewTile();
+    void returnTile(Tile* oldTile);
 
 private:
     logger::Logger *log;
 
     QVector<QVector<Tile*>> tileArray;
+    QVector<Tile*>         tilePool;
 
     //Coordinate System
-    double northing_inch;
-    double easting_inch;
+    double northingOffset_inch;
+    double eastingOffset_inch;
     double inchPerPixel;
+
+    QPoint previousMouse_pos;
+    QPoint currentMouse_pos;
 
     //Debugging
     double paintCycleTime_s;
-    int    mouseX_pos;
-    int    mouseY_pos;
 
     //Painting Tools
     QPen    debugTextPen;

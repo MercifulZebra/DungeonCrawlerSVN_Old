@@ -3,6 +3,7 @@
 #include "logger.h"
 #include "tile.h"
 
+#include <QApplication>
 #include <QDebug>
 #include <QElapsedTimer>
 #include <QMessageBox>
@@ -12,12 +13,12 @@
 MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     log(NULL),
     tileArray(),
-    northing_inch(0.0),
-    easting_inch(0.0),
+    northingOffset_inch(0.0),
+    eastingOffset_inch(0.0),
     inchPerPixel(.5),
+    previousMouse_pos(),
+    currentMouse_pos(),
     paintCycleTime_s(0.0),
-    mouseX_pos(0),
-    mouseY_pos(0),
     debugTextPen(),
     debugTextFont()
 {
@@ -42,12 +43,72 @@ bool MapWindow::initWindow(QString /*config_filename*/, logger::Logger *nLog) {
     return initSuccess_flag;
 }
 
+void MapWindow::mousePressEvent(QMouseEvent *e) {
+
+    if (e->buttons() == Qt::LeftButton) {
+        if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
+
+        }
+        else if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
+
+        }
+        else if (QApplication::keyboardModifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
+
+        }
+        else {
+            previousMouse_pos = e->pos();
+        }
+    }
+
+    update();
+}
+
+void MapWindow::mouseReleaseEvent(QMouseEvent *event) {
+    previousMouse_pos = QPoint(-1, -1);
+}
+
 void MapWindow::mouseMoveEvent(QMouseEvent *e) {
 
-    mouseX_pos = e->x();
-    mouseY_pos = e->y();
+    handleMouseMove(e);
+
     QOpenGLWidget::mouseMoveEvent(e);
     update();
+}
+
+void MapWindow::wheelEvent(QWheelEvent *e) {
+    double rotDelta = static_cast<float>(e->angleDelta().y());
+
+    inchPerPixel = inchPerPixel + (inchPerPixel * (rotDelta / 1200.0));
+    update();
+}
+
+void MapWindow::handleMouseMove(QMouseEvent *e) {
+
+    currentMouse_pos = e->pos();
+
+    if (e->buttons() == Qt::LeftButton) {
+        northingOffset_inch = northingOffset_inch - ((currentMouse_pos.y() - previousMouse_pos.y()) * inchPerPixel);
+        eastingOffset_inch = eastingOffset_inch - ((currentMouse_pos.x() - previousMouse_pos.x()) * inchPerPixel);
+
+        previousMouse_pos = currentMouse_pos;
+    }
+
+}
+
+void MapWindow::handleMoveLocation(QMouseEvent *e) {
+
+}
+
+void MapWindow::handleRightMouseMove(QMouseEvent *e) {
+
+}
+
+void MapWindow::handleShiftMouseMove(QMouseEvent *e) {
+
+}
+
+void MapWindow::handleControlMouseMove(QMouseEvent *e) {
+
 }
 
 void MapWindow::paintEvent(QPaintEvent *e) {
@@ -95,9 +156,9 @@ void MapWindow::paintDebugText(QPainter *painter) {
     QString line2 = QString("");
     QString line3 = QString("");
     QString line4 = QString("");
-    QString line5 = QString("");
-    QString line6 = QString("");
-    QString line7 = QString("Mouse Position: (%1, %2)").arg(mouseX_pos).arg(mouseY_pos);
+    QString line5 = QString("IPP: %1").arg(inchPerPixel);
+    QString line6 = QString("NumTiles: %1 NumPool: %2").arg(getTileArraySize()).arg(tilePool.length());
+    QString line7 = QString("Mouse Position: (%1, %2)").arg(currentMouse_pos.x()).arg(currentMouse_pos.y());
     QString line8 = QString("Last Paint Cycle Time: %1 s").arg(paintCycleTime_s / 1000, 0, 'g', 3);
 
     QString dText = QString("%1 \n%2 \n%3 \n%4 \n%5 \n%6 \n%7 \n%8").arg(line1).arg(line2).arg(line3).arg(line4).arg(line5).arg(line6).arg(line7).arg(line8);
@@ -110,12 +171,38 @@ void MapWindow::paintDebugText(QPainter *painter) {
 void MapWindow::paintTiles(QPainter *painter) {
     painter->save();
 
+    int leftSide_pix = 0;
+    int rightSide_pix = this->width();
+
+    int topSide_pix = 0;
+    int botSide_pix = this->height();
+
+    int marginWidth = 200;
+
+    int northingOffset_pix = int ((northingOffset_inch / inchPerPixel) + 0.5);
+    int eastingOffset_pix = int ((eastingOffset_inch / inchPerPixel) + 0.5);
+
+    int tileWidth = (60 / inchPerPixel);
+    int tileHeight = (60 / inchPerPixel);
+
     painter->setPen(Qt::white);
     for (int i =0; i < tileArray.length(); i++) {
         QVector<Tile*> *column = tileArray.data();
         for (int j = 0; j < column->length(); j++) {
-            QRect tileBox(100 + (i * 60)/inchPerPixel, 100 + (j * 60)/inchPerPixel,  60/inchPerPixel, 60/inchPerPixel);
-            painter->drawRect(tileBox);
+            int tileLeft_pos = marginWidth + (i * tileWidth) - eastingOffset_pix;
+            int tileTop_pos = marginWidth + (j * tileHeight) - northingOffset_pix;
+
+            int tileRight_pos = tileLeft_pos + tileWidth;
+            int tileBot_pos = tileTop_pos + tileHeight;
+
+            if ((tileLeft_pos < rightSide_pix && tileLeft_pos > leftSide_pix) ||
+                (tileRight_pos < rightSide_pix && tileRight_pos > leftSide_pix ) &&
+                (tileTop_pos < botSide_pix && tileTop_pos > topSide_pix) ||
+                (tileBot_pos < botSide_pix && tileBot_pos > topSide_pix )) {
+
+                QRect tBox (tileLeft_pos, tileTop_pos, tileWidth, tileHeight);
+                painter->drawRect(tBox);
+            }
         }
     }
     painter->restore();
@@ -148,6 +235,14 @@ bool MapWindow::changeSize(int nWidth, int nHeight, bool force_flag) {
     return sizeChanged_flag;
 }
 
+int MapWindow::getTileArraySize() {
+    int numTiles = 0;
+    for (int i =0; i < tileArray.length(); i++) {
+        numTiles = numTiles + tileArray.at(i).length();
+    }
+    return numTiles;
+}
+
 bool MapWindow::setDimensions(int nRows, int nCols) {
     bool sizeChanged_flag = true;
 
@@ -159,7 +254,10 @@ bool MapWindow::setDimensions(int nRows, int nCols) {
 
     //Remove Cols if necessary
     while (tileArray.length() > nCols) {
-        tileArray.takeLast();
+        QVector <Tile*> oldColumn = tileArray.takeLast();
+        while(!oldColumn.isEmpty()) {
+            returnTile(oldColumn.takeLast());
+        }
     }
 
     //Adjust Row Length
@@ -169,18 +267,34 @@ bool MapWindow::setDimensions(int nRows, int nCols) {
 
         //Add Col if necessary
         while (currentColumn.length() < nRows) {
-            Tile* nRow = new Tile(this);
+            Tile* nRow = getNewTile();
             currentColumn.append(nRow);
         }
 
         //Remove Cols if necessary
         while (currentColumn.length() > nRows) {
-            currentColumn.takeLast();
+            returnTile(currentColumn.takeLast());
         }
 
     }
 
     return sizeChanged_flag;
+}
 
+Tile* MapWindow::getNewTile() {
+    Tile* rTile = NULL;
 
+    if (!tilePool.isEmpty()) {
+        rTile = tilePool.takeLast();
+    }
+
+    if (rTile == NULL) {
+        rTile = new Tile(this);
+    }
+
+    return rTile;
+}
+
+void MapWindow::returnTile(Tile *oldTile) {
+    tilePool.append(oldTile);
 }
