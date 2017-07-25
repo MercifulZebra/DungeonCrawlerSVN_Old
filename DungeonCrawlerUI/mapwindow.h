@@ -22,6 +22,7 @@ public:
 
     bool initWindow(QString config_filename, logger::Logger *nLog);
 
+    //Interaction Functions
     void mousePressEvent(QMouseEvent *e) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *e) override;
@@ -33,14 +34,19 @@ public:
     void handleShiftMouseMove(QMouseEvent *e);
     void handleControlMouseMove(QMouseEvent *e);
 
+    //Painting Functions
     void paintEvent(QPaintEvent *e) override;
     void paintThis(QPainter *painter, QPaintEvent *pEvent);
     void paintBackground(QPainter *painter, QPaintEvent *pEvent);
     void paintDebugText(QPainter *painter);
     void paintTiles(QPainter *painter);
+    void paintCenterMark(QPainter *painter);
 
+    //TileArray Management functions
     bool changeSize(int nWidth, int nHeight, bool force_flag = false);
     int getTileArraySize();
+    int getTileArrayWidthPix();
+    int getTileArrayHeightPix();
 
 private:
     bool setDimensions(int nRows, int nCols);
@@ -62,8 +68,12 @@ private:
     QPoint previousMouse_pos;
     QPoint currentMouse_pos;
 
+    double tileWidth_inches;
+    double tileHeight_inches;
+
     //Debugging
     double paintCycleTime_s;
+    QString debugLine1;
 
     //Painting Tools
     QPen    debugTextPen;

@@ -18,7 +18,10 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     inchPerPixel(.5),
     previousMouse_pos(),
     currentMouse_pos(),
+    tileWidth_inches(60),
+    tileHeight_inches(60),
     paintCycleTime_s(0.0),
+    debugLine1(),
     debugTextPen(),
     debugTextFont()
 {
@@ -63,7 +66,7 @@ void MapWindow::mousePressEvent(QMouseEvent *e) {
     update();
 }
 
-void MapWindow::mouseReleaseEvent(QMouseEvent *event) {
+void MapWindow::mouseReleaseEvent(QMouseEvent * /*event*/) {
     previousMouse_pos = QPoint(-1, -1);
 }
 
@@ -78,7 +81,7 @@ void MapWindow::mouseMoveEvent(QMouseEvent *e) {
 void MapWindow::wheelEvent(QWheelEvent *e) {
     double rotDelta = static_cast<float>(e->angleDelta().y());
 
-    inchPerPixel = inchPerPixel + (inchPerPixel * (rotDelta / 1200.0));
+    inchPerPixel = inchPerPixel - (inchPerPixel * (rotDelta / 1200.0));
     update();
 }
 
@@ -95,19 +98,19 @@ void MapWindow::handleMouseMove(QMouseEvent *e) {
 
 }
 
-void MapWindow::handleMoveLocation(QMouseEvent *e) {
+void MapWindow::handleMoveLocation(QMouseEvent * /*e*/) {
 
 }
 
-void MapWindow::handleRightMouseMove(QMouseEvent *e) {
+void MapWindow::handleRightMouseMove(QMouseEvent * /*e*/) {
 
 }
 
-void MapWindow::handleShiftMouseMove(QMouseEvent *e) {
+void MapWindow::handleShiftMouseMove(QMouseEvent * /*e*/) {
 
 }
 
-void MapWindow::handleControlMouseMove(QMouseEvent *e) {
+void MapWindow::handleControlMouseMove(QMouseEvent * /*e*/) {
 
 }
 
@@ -129,6 +132,7 @@ void MapWindow::paintThis(QPainter *painter, QPaintEvent* pEvent) {
     paintBackground(painter, pEvent);
     paintTiles(painter);
     paintDebugText(painter);
+    paintCenterMark(painter);
 
     paintCycleTime_s = timer.elapsed();
 }
@@ -145,20 +149,20 @@ void MapWindow::paintDebugText(QPainter *painter) {
 
     painter->translate(0, height());
 
-    int dWidth          = 200;
+    int dWidth          = 300;
     int dHeight         = 110;
     int dLeftBorder     = 10;
     int dBottomBorder   = 10;
 
     QRect dRect(QPoint(dLeftBorder, -dBottomBorder - dHeight), QPoint(dLeftBorder + dWidth, -dBottomBorder));
 
-    QString line1 = QString("");
+    QString line1 = debugLine1;
     QString line2 = QString("");
     QString line3 = QString("");
     QString line4 = QString("");
     QString line5 = QString("IPP: %1").arg(inchPerPixel);
     QString line6 = QString("NumTiles: %1 NumPool: %2").arg(getTileArraySize()).arg(tilePool.length());
-    QString line7 = QString("Mouse Position: (%1, %2)").arg(currentMouse_pos.x()).arg(currentMouse_pos.y());
+    QString line7 = QString("Mouse Position: (%1, %2) North/East: (%3 / %4)").arg(currentMouse_pos.x()).arg(currentMouse_pos.y()).arg(northingOffset_inch).arg(eastingOffset_inch);
     QString line8 = QString("Last Paint Cycle Time: %1 s").arg(paintCycleTime_s / 1000, 0, 'g', 3);
 
     QString dText = QString("%1 \n%2 \n%3 \n%4 \n%5 \n%6 \n%7 \n%8").arg(line1).arg(line2).arg(line3).arg(line4).arg(line5).arg(line6).arg(line7).arg(line8);
@@ -170,41 +174,60 @@ void MapWindow::paintDebugText(QPainter *painter) {
 
 void MapWindow::paintTiles(QPainter *painter) {
     painter->save();
+    painter->translate(this->width() / 2, this->height() / 2);
 
-    int leftSide_pix = 0;
-    int rightSide_pix = this->width();
+    int leftSide_pix = -this->width() / 2;
+    int rightSide_pix = this->width() / 2;
 
-    int topSide_pix = 0;
-    int botSide_pix = this->height();
+    int topSide_pix = -this->height() / 2;
+    int botSide_pix = this->height() / 2;
 
     int marginWidth = 200;
 
-    int northingOffset_pix = int ((northingOffset_inch / inchPerPixel) + 0.5);
-    int eastingOffset_pix = int ((eastingOffset_inch / inchPerPixel) + 0.5);
+    int northingOffset_pix = int (((-northingOffset_inch / inchPerPixel) - (getTileArrayHeightPix() / 2))+ 0.5);
+    int eastingOffset_pix = int (((-eastingOffset_inch / inchPerPixel) - (getTileArrayWidthPix() / 2))+ 0.5);
 
-    int tileWidth = (60 / inchPerPixel);
-    int tileHeight = (60 / inchPerPixel);
+    int tileWidth = (tileWidth_inches / inchPerPixel);
+    int tileHeight = (tileHeight_inches / inchPerPixel);
 
+    int numTilesDrawn = 0;
     painter->setPen(Qt::white);
     for (int i =0; i < tileArray.length(); i++) {
         QVector<Tile*> *column = tileArray.data();
         for (int j = 0; j < column->length(); j++) {
-            int tileLeft_pos = marginWidth + (i * tileWidth) - eastingOffset_pix;
-            int tileTop_pos = marginWidth + (j * tileHeight) - northingOffset_pix;
+            int tileLeft_pos = (i * tileWidth) + eastingOffset_pix;
+            int tileTop_pos = (j * tileHeight) + northingOffset_pix;
 
             int tileRight_pos = tileLeft_pos + tileWidth;
             int tileBot_pos = tileTop_pos + tileHeight;
 
-            if ((tileLeft_pos < rightSide_pix && tileLeft_pos > leftSide_pix) ||
-                (tileRight_pos < rightSide_pix && tileRight_pos > leftSide_pix ) &&
-                (tileTop_pos < botSide_pix && tileTop_pos > topSide_pix) ||
-                (tileBot_pos < botSide_pix && tileBot_pos > topSide_pix )) {
+            if (((tileLeft_pos < rightSide_pix && tileLeft_pos > leftSide_pix) ||
+                (tileRight_pos < rightSide_pix && tileRight_pos > leftSide_pix )) &&
+                ((tileTop_pos < botSide_pix && tileTop_pos > topSide_pix) ||
+                (tileBot_pos < botSide_pix && tileBot_pos > topSide_pix ))) {
 
+                numTilesDrawn++;
                 QRect tBox (tileLeft_pos, tileTop_pos, tileWidth, tileHeight);
                 painter->drawRect(tBox);
             }
         }
     }
+
+    debugLine1 = QString("NumTilesDrawn: %1 N: %2 E: %3").arg(numTilesDrawn).arg(northingOffset_pix).arg(eastingOffset_pix);
+    painter->restore();
+}
+
+void MapWindow::paintCenterMark(QPainter *painter) {
+    painter->save();
+
+    painter->translate(this->width() / 2, this->height() / 2);
+    painter->setPen(debugTextPen);
+
+    painter->drawLine(QPoint(-10, 0), QPoint(-5, 0));
+    painter->drawLine(QPoint(10, 0), QPoint(5, 0));
+    painter->drawLine(QPoint(0, -10), QPoint(0, -5));
+    painter->drawLine(QPoint(0, 10), QPoint(0, 5));
+
     painter->restore();
 }
 
@@ -243,6 +266,34 @@ int MapWindow::getTileArraySize() {
     return numTiles;
 }
 
+int MapWindow::getTileArrayWidthPix() {
+    int numCols = tileArray.length();
+    double rWidth = (float (numCols) * tileWidth_inches) / inchPerPixel;
+
+    return rWidth;
+}
+
+int MapWindow::getTileArrayHeightPix() {
+
+    int numRows = 0;
+    double rHeight = 0;
+
+    if (!tileArray.isEmpty()) {
+        numRows = tileArray.at(0).length();
+    }
+
+    for (int i = 0; i < tileArray.length(); i++) {
+        if (tileArray.at(i).length() != numRows) {
+            log->warn(QString("Array size MisMatch. Column %1 length %2 does not match %3").arg(i).arg(tileArray.at(i).length()).arg(numRows));
+        }
+    }
+
+    rHeight = (float (numRows) * tileHeight_inches) / inchPerPixel;
+
+    return rHeight;
+
+}
+
 bool MapWindow::setDimensions(int nRows, int nCols) {
     bool sizeChanged_flag = true;
 
@@ -261,7 +312,6 @@ bool MapWindow::setDimensions(int nRows, int nCols) {
     }
 
     //Adjust Row Length
-    QVector<Tile*> *tileColumns = tileArray.data();
     for (int i = 0; i < tileArray.length(); i++) {
         QVector<Tile*> &currentColumn = tileArray[i];
 
