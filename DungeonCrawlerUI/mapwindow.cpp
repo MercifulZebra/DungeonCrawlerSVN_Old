@@ -404,7 +404,7 @@ void MapWindow::updateTileLocations() {
             int tileTop_pos = tileBot_pos - tileHeight;
 
             QRect tileBounds(QPoint(tileLeft_pos, tileTop_pos), QPoint(tileRight_pos, tileBot_pos));
-            tileArray.at(i).at(j)->setBoundingBox(tileBounds);
+            tileArray.at(numTilesLeft - (i + 1)).at(numTilesTop - (j + 1))->setBoundingBox(tileBounds);
         }
 
         //Bot Half
@@ -416,7 +416,7 @@ void MapWindow::updateTileLocations() {
             int tileBot_pos = tileTop_pos + tileHeight;
 
             QRect tileBounds(QPoint(tileLeft_pos, tileTop_pos), QPoint(tileRight_pos, tileBot_pos));
-            tileArray.at(i).at(j + numTilesTop)->setBoundingBox(tileBounds);
+            tileArray.at(numTilesLeft - (i + 1)).at(j + numTilesTop)->setBoundingBox(tileBounds);
 
         }
     }
@@ -433,7 +433,7 @@ void MapWindow::updateTileLocations() {
             int tileTop_pos = tileBot_pos - tileHeight;
 
             QRect tileBounds(QPoint(tileLeft_pos, tileTop_pos), QPoint(tileRight_pos, tileBot_pos));
-            tileArray.at(i + numTilesLeft).at(j)->setBoundingBox(tileBounds);
+            tileArray.at(i + numTilesLeft).at(numTilesTop - (j + 1))->setBoundingBox(tileBounds);
         }
 
         //Bot Half
