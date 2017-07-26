@@ -50,7 +50,7 @@ public:
     int getTileArrayColumnCount();
     int getTileArrayRowCount();
 
-    void checkHoveredTile(QMouseEvent *e);
+    void checkHoveredTile(QPoint position);
 
     // Coordinate Helper Functions
     void updateMaxOffsets();
@@ -71,6 +71,8 @@ private:
 
     QVector<QVector<Tile*>> tileArray;
     QVector<Tile*>         tilePool;
+
+    QPoint lastMousePosition;
 
     //Coordinate System
     double northingOffset_inch;

@@ -13,6 +13,7 @@
 MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     log(NULL),
     tileArray(),
+    lastMousePosition(),
     northingOffset_inch(0.0),
     eastingOffset_inch(0.0),
     inchPerPixel(.5),
@@ -86,7 +87,9 @@ void MapWindow::mouseMoveEvent(QMouseEvent *e) {
 
     handleMouseMove(e);
 
-    checkHoveredTile(e);
+    lastMousePosition = e->pos();
+
+    checkHoveredTile(lastMousePosition);
 
     QOpenGLWidget::mouseMoveEvent(e);
     update();
@@ -103,6 +106,8 @@ void MapWindow::wheelEvent(QWheelEvent *e) {
     }
     updateTileLocations();
     updateMaxOffsets();
+
+    checkHoveredTile(lastMousePosition);
 
     northingOffset_inch = boundOffset(northingOffset_inch, maxNorthingUpperOffset_inch, maxNorthingLowerOffset_inch);
     eastingOffset_inch = boundOffset(eastingOffset_inch, maxEastingLeftOffset_inch, maxEastingRightOffset_inch);
@@ -225,10 +230,7 @@ void MapWindow::paintTiles(QPainter *painter) {
         numRows = tileArray.at(0).length();
     }
 
-    //Draw Left Half
     for (int i = 0; i < numCols; i++) {
-        QVector<Tile*> *column = tileArray.data();
-        //Top Half
         for (int j = 0; j < numRows; j++) {
 
             if (boxWithinView(tileArray.at(i).at(j)->getBoundingBox(), viewBounds)) {
@@ -338,9 +340,9 @@ int MapWindow::getTileArrayRowCount() {
     return rCount;
 }
 
-void MapWindow::checkHoveredTile(QMouseEvent *e) {
-    int adjustedMousePos_x = e->x() - (this->width() / 2);
-    int adjustedMousePos_y = e->y() - (this->height() / 2);
+void MapWindow::checkHoveredTile(QPoint position) {
+    int adjustedMousePos_x = position.x() - (this->width() / 2);
+    int adjustedMousePos_y = position.y() - (this->height() / 2);
 
     bool accepted_flag = false;
     if (hoveredTile != NULL) {
@@ -471,7 +473,6 @@ void MapWindow::updateMaxOffsets() {
     }
     else if ((totalWidth + 2*tMarginWidth) > this->width()) {
         // Give Suppressed Margin
-        double suppressMod = 0.75;
         int eastingLeftWidthDif_pix = -(tMarginWidth/2 - (leftArrayDist + halfWidth));
         maxEastingLeftOffset_inch = eastingLeftWidthDif_pix * inchPerPixel;
 
@@ -543,7 +544,6 @@ void MapWindow::updateTileLocations() {
 
     //Draw Left Half
     for (int i = 0; i < numTilesLeft; i++) {
-        QVector<Tile*> *column = tileArray.data();
         //Top Half
         for (int j = 0; j < numTilesTop; j++) {
 
@@ -573,7 +573,6 @@ void MapWindow::updateTileLocations() {
 
     //Right Half
     for (int i = 0; i < numTilesRight; i++) {
-        QVector<Tile*> *column = tileArray.data();
         //Top Half
         for (int j = 0; j < numTilesTop; j++) {
             int tileLeft_pos = (i * tileWidth) + eastingOffset_pix;
