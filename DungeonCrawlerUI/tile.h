@@ -20,6 +20,8 @@ namespace logger {
 //Straight Tunnel
 //Corner Tunnel
 
+class QPainter;
+
 class Tile : public QObject
 {
     Q_OBJECT
@@ -27,6 +29,8 @@ public:
     explicit Tile(QObject *parent = 0);
 
     bool init(logger::Logger *nLog);
+
+    void paintThis(QPainter *painter);
 
     QRect getBoundingBox();
     void setBoundingBox(QRect nRect);

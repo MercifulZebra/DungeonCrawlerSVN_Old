@@ -225,8 +225,7 @@ void MapWindow::paintTiles(QPainter *painter) {
         for (int j = 0; j < numRows; j++) {
 
             if (boxWithinView(tileArray.at(i).at(j)->getBoundingBox(), viewBounds)) {
-                painter->drawRect(tileArray.at(i).at(j)->getBoundingBox());
-                painter->drawText(tileArray.at(i).at(j)->getBoundingBox(), QString("\n  %1     %2").arg(i).arg(j));
+                tileArray.at(i).at(j)->paintThis(painter);
             }
         }
     }
@@ -430,10 +429,10 @@ void MapWindow::updateMaxOffsets() {
     else if ((totalWidth + 2*tMarginWidth) > this->width()) {
         // Give Suppressed Margin
         double suppressMod = 0.75;
-        int eastingLeftWidthDif_pix = -(tMarginWidth - (leftArrayDist + halfWidth));
+        int eastingLeftWidthDif_pix = -(tMarginWidth/2 - (leftArrayDist + halfWidth));
         maxEastingLeftOffset_inch = eastingLeftWidthDif_pix * inchPerPixel;
 
-        int eastingRightWidthDif_pix = tMarginWidth - (halfWidth - rightArrayDist);
+        int eastingRightWidthDif_pix = tMarginWidth/2 - (halfWidth - rightArrayDist);
         maxEastingRightOffset_inch = eastingRightWidthDif_pix * inchPerPixel;
     }
     else {
@@ -441,19 +440,19 @@ void MapWindow::updateMaxOffsets() {
         maxEastingRightOffset_inch = 0;
     }
 
-    if ((upperArrayDist < -halfHeight) || (lowerArrayDist > halfHeight)) {
+    if (totalHeight > this->height()) {
         int northingUpperHeightDif_pix = (upperArrayDist - marginHeight_pix) + halfHeight;
         maxNorthingUpperOffset_inch = northingUpperHeightDif_pix * inchPerPixel;
 
         int northingLowerHeightDif_pix = (lowerArrayDist + marginHeight_pix) - halfHeight;
         maxNorthingLowerOffset_inch = northingLowerHeightDif_pix * inchPerPixel;
     }
-    else if ((totalWidth + 2*tMarginHeight) > this->height()) {
+    else if ((totalHeight + 2*tMarginHeight) > this->height()) {
         // Give Suppressed Margin
-        int northingUpperHeightDif_pix = -(tMarginHeight - (upperArrayDist + halfHeight));
+        int northingUpperHeightDif_pix = -(tMarginHeight/2 - (upperArrayDist + halfHeight));
         maxNorthingUpperOffset_inch = northingUpperHeightDif_pix * inchPerPixel;
 
-        int northingLowerHeightDif_pix = tMarginHeight - (halfHeight - lowerArrayDist);
+        int northingLowerHeightDif_pix = (tMarginHeight/2 - (halfHeight - lowerArrayDist));
         maxNorthingLowerOffset_inch = northingLowerHeightDif_pix * inchPerPixel;
     }
     else {
