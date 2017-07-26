@@ -97,6 +97,10 @@ void MapWindow::wheelEvent(QWheelEvent *e) {
 
     inchPerPixel = inchPerPixel - (inchPerPixel * (rotDelta / 1200.0));
     inchPerPixel = floor((inchPerPixel * 100) + 0.5) / 100;
+
+    if (inchPerPixel < 0.06) {
+        inchPerPixel = 0.06;
+    }
     updateTileLocations();
     updateMaxOffsets();
 
@@ -340,7 +344,7 @@ void MapWindow::checkHoveredTile(QMouseEvent *e) {
 
     bool accepted_flag = false;
     if (hoveredTile != NULL) {
-        if (hoveredTile->contains(e->x(), e->y())) {
+        if (hoveredTile->contains(adjustedMousePos_x, adjustedMousePos_y)) {
             accepted_flag = true;
         }
         else {
@@ -355,7 +359,7 @@ void MapWindow::checkHoveredTile(QMouseEvent *e) {
                 int leftBound = tileArray.at(i).at(0)->getBoundingBox().left();
                 int rightBound = tileArray.at(i).at(0)->getBoundingBox().right();
 
-                if ((adjustedMousePos_x > leftBound) && (adjustedMousePos_x < rightBound) ) {
+                if ((adjustedMousePos_x > leftBound) && (adjustedMousePos_x <= rightBound) ) {
                     for (int j = 0; j < tileArray.at(i).length() && !accepted_flag; j++) {
                         Tile *cTile = tileArray.at(i).at(j);
                         if (cTile->contains(adjustedMousePos_x, adjustedMousePos_y)) {
