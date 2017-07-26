@@ -47,14 +47,15 @@ public:
     int getTileArraySize();
     int getTileArrayWidthPix();
     int getTileArrayHeightPix();
+    int getTileArrayColumnCount();
+    int getTileArrayRowCount();
 
     // Coordinate Helper Functions
     void updateMaxOffsets();
     void updateTileLocations();
     double boundOffset(double offset, double lowerBound, double upperBound);
     bool boxWithinView(QRect box, QRect view);
-    int getTileNorthingOffset(int rowIndex, int columnIndex);
-    int getTileEastingOffset(int rowIndex, int columnIndex);
+    QRect getTileRect(int rowIndex, int columnIndex);
 
 private:
     bool setDimensions(int nRows, int nCols);
@@ -73,8 +74,10 @@ private:
     double eastingOffset_inch;
     double inchPerPixel;
 
-    double maxNorthingOffset_inch;
-    double maxEastingOffset_inch;
+    double maxNorthingUpperOffset_inch;
+    double maxNorthingLowerOffset_inch;
+    double maxEastingLeftOffset_inch;
+    double maxEastingRightOffset_inch;
 
     QPoint previousMouse_pos;
     QPoint currentMouse_pos;
@@ -91,6 +94,8 @@ private:
     QString debugLine2;
 
     //Painting Tools
+    bool firstPaint_flag;
+
     QPen    debugTextPen;
     QFont   debugTextFont;
 

@@ -16,8 +16,10 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     northingOffset_inch(0.0),
     eastingOffset_inch(0.0),
     inchPerPixel(.5),
-    maxNorthingOffset_inch(0.0),
-    maxEastingOffset_inch(0.0),
+    maxNorthingUpperOffset_inch(0.0),
+    maxNorthingLowerOffset_inch(0.0),
+    maxEastingLeftOffset_inch(0.0),
+    maxEastingRightOffset_inch(0.0),
     previousMouse_pos(),
     currentMouse_pos(),
     tileWidth_inches(60),
@@ -27,6 +29,7 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     paintCycleTime_s(0.0),
     debugLine1(),
     debugLine2(),
+    firstPaint_flag(true),
     debugTextPen(),
     debugTextFont()
 {
@@ -40,8 +43,9 @@ bool MapWindow::initWindow(QString /*config_filename*/, logger::Logger *nLog) {
     setMouseTracking(true);
 
     //Set Up Tiles
-    changeSize(8, 8, true);
+    changeSize(12, 12, true);
 
+    updateTileLocations();
     updateMaxOffsets();
 
     //Init Paint Tools
@@ -90,10 +94,11 @@ void MapWindow::wheelEvent(QWheelEvent *e) {
 
     inchPerPixel = inchPerPixel - (inchPerPixel * (rotDelta / 1200.0));
     inchPerPixel = floor((inchPerPixel * 100) + 0.5) / 100;
+    updateTileLocations();
     updateMaxOffsets();
 
-    northingOffset_inch = boundOffset(northingOffset_inch, -maxNorthingOffset_inch, maxNorthingOffset_inch);
-    eastingOffset_inch = boundOffset(eastingOffset_inch, -maxEastingOffset_inch, maxEastingOffset_inch);
+    northingOffset_inch = boundOffset(northingOffset_inch, maxNorthingUpperOffset_inch, maxNorthingLowerOffset_inch);
+    eastingOffset_inch = boundOffset(eastingOffset_inch, maxEastingLeftOffset_inch, maxEastingRightOffset_inch);
     update();
 }
 
@@ -108,8 +113,8 @@ void MapWindow::handleMouseMove(QMouseEvent *e) {
         previousMouse_pos = currentMouse_pos;
     }
 
-    northingOffset_inch = boundOffset(northingOffset_inch, -maxNorthingOffset_inch, maxNorthingOffset_inch);
-    eastingOffset_inch = boundOffset(eastingOffset_inch, -maxEastingOffset_inch, maxEastingOffset_inch);
+    northingOffset_inch = boundOffset(northingOffset_inch, maxNorthingUpperOffset_inch, maxNorthingLowerOffset_inch);
+    eastingOffset_inch = boundOffset(eastingOffset_inch, maxEastingLeftOffset_inch, maxEastingRightOffset_inch);
 
 }
 
@@ -130,6 +135,12 @@ void MapWindow::handleControlMouseMove(QMouseEvent * /*e*/) {
 }
 
 void MapWindow::paintEvent(QPaintEvent *e) {
+
+    if (firstPaint_flag) {
+        updateTileLocations();
+        updateMaxOffsets();
+    }
+
     QPainter painter;
     painter.begin(this);
 
@@ -175,7 +186,7 @@ void MapWindow::paintDebugText(QPainter *painter) {
     QString line2 = debugLine2;
     QString line3 = QString("");
     QString line4 = QString("");
-    QString line5 = QString("IPP: %1").arg(inchPerPixel);
+    QString line5 = QString("IPP: %1 TWpx: %2").arg(inchPerPixel).arg(tileWidth_inches / inchPerPixel);
     QString line6 = QString("NumTiles: %1 NumPool: %2").arg(getTileArraySize()).arg(tilePool.length());
     QString line7 = QString("Mouse Position: (%1, %2) North/East: (%3 / %4)").arg(currentMouse_pos.x()).arg(currentMouse_pos.y()).arg(northingOffset_inch).arg(eastingOffset_inch);
     QString line8 = QString("Last Paint Cycle Time: %1 s").arg(paintCycleTime_s / 1000, 0, 'g', 3);
@@ -199,8 +210,6 @@ void MapWindow::paintTiles(QPainter *painter) {
 
     QRect viewBounds(QPoint(leftSide_pix, topSide_pix), QPoint(rightSide_pix, botSide_pix));
 
-    updateTileLocations();
-
     painter->setPen(Qt::white);
 
     int numCols = tileArray.length();
@@ -221,6 +230,7 @@ void MapWindow::paintTiles(QPainter *painter) {
             }
         }
     }
+
     painter->restore();
 }
 
@@ -301,6 +311,27 @@ int MapWindow::getTileArrayHeightPix() {
 
 }
 
+int MapWindow::getTileArrayColumnCount() {
+    return tileArray.length();
+}
+
+int MapWindow::getTileArrayRowCount() {
+    int rCount = -1;
+    bool continueFlag = true;
+
+    for (int i = 0; i < tileArray.length() && continueFlag; i++) {
+        if ((tileArray.at(i).length()) != rCount && (rCount != -1)) {
+            log->warn("MapWindow.getTileArrayRowCount Number of Rows does not match.");
+            rCount = -1;
+            continueFlag = false;
+        }
+
+        rCount = tileArray.at(i).length();
+    }
+
+    return rCount;
+}
+
 bool MapWindow::setDimensions(int nRows, int nCols) {
     bool sizeChanged_flag = true;
 
@@ -357,19 +388,96 @@ void MapWindow::returnTile(Tile *oldTile) {
 }
 
 void MapWindow::updateMaxOffsets() {
-    int eastingWidthDif_pix = (getTileArrayWidthPix() / 2 + marginWidth_pix) - (this->width() / 2);
-    maxEastingOffset_inch = eastingWidthDif_pix * inchPerPixel;
-    if (maxEastingOffset_inch < 0) {
-        maxEastingOffset_inch = 0;
+
+    int numTilesLeft = static_cast<int> ((static_cast<double>(tileArray.length())/2.0) + 0.5);
+    int numTilesRight = tileArray.length() - numTilesLeft;
+
+    int numTilesTop = 0;
+    int numTilesBot = 0;
+
+    if (tileArray.length() > 0) {
+        numTilesTop = static_cast<int> ((static_cast<double>(tileArray.at(0).length())/2.0) + 0.5);
+        numTilesBot = tileArray.at(0).length() - numTilesTop;
     }
 
-    int northingHeightDif_pix = (getTileArrayHeightPix() / 2 + marginHeight_pix) - (this->height() / 2);
-    maxNorthingOffset_inch = northingHeightDif_pix * inchPerPixel;
-    if (maxNorthingOffset_inch < 0) {
-        maxNorthingOffset_inch = 0;
+    QRect upperLeftBox = getTileRect(0, 0);
+    QRect centerUpperLeftBox = getTileRect(numTilesTop - 1, numTilesLeft - 1);
+    QRect lowerRightBox = getTileRect(getTileArrayRowCount() - 1, getTileArrayColumnCount() - 1);
+    QRect centerLowerRightBox = getTileRect(numTilesBot, numTilesRight);
+
+    int leftArrayDist = (upperLeftBox.left() - centerUpperLeftBox.right());
+    int rightArrayDist = (lowerRightBox.right() - centerLowerRightBox.left());
+    int upperArrayDist = (upperLeftBox.top() - centerUpperLeftBox.bottom());
+    int lowerArrayDist = (lowerRightBox.bottom() - centerLowerRightBox.top());
+
+    int halfWidth = this->width()/2;
+    int halfHeight = this->height()/2;
+
+    int totalWidth = (-leftArrayDist) + rightArrayDist;
+    int totalHeight = (-upperArrayDist) + lowerArrayDist;
+
+    int tMarginWidth = marginWidth_pix;
+    int tMarginHeight = marginHeight_pix;
+
+    if (totalWidth > this->width()) {
+        // Give Full Margin
+        int eastingLeftWidthDif_pix = (leftArrayDist - marginWidth_pix) + halfWidth;
+        maxEastingLeftOffset_inch = eastingLeftWidthDif_pix * inchPerPixel;
+
+        int eastingRightWidthDif_pix = (rightArrayDist + marginWidth_pix) - halfWidth;
+        maxEastingRightOffset_inch = eastingRightWidthDif_pix * inchPerPixel;
+    }
+    else if ((totalWidth + 2*tMarginWidth) > this->width()) {
+        // Give Suppressed Margin
+        double suppressMod = 0.75;
+        int eastingLeftWidthDif_pix = -(tMarginWidth - (leftArrayDist + halfWidth));
+        maxEastingLeftOffset_inch = eastingLeftWidthDif_pix * inchPerPixel;
+
+        int eastingRightWidthDif_pix = tMarginWidth - (halfWidth - rightArrayDist);
+        maxEastingRightOffset_inch = eastingRightWidthDif_pix * inchPerPixel;
+    }
+    else {
+        maxEastingLeftOffset_inch = 0;
+        maxEastingRightOffset_inch = 0;
     }
 
-    debugLine2 = QString("T_W:%1 W/2:%2 MW: %3 MO: %4").arg(getTileArrayWidthPix()/2).arg(this->width() / 2).arg(marginWidth_pix).arg(maxEastingOffset_inch);
+    if ((upperArrayDist < -halfHeight) || (lowerArrayDist > halfHeight)) {
+        int northingUpperHeightDif_pix = (upperArrayDist - marginHeight_pix) + halfHeight;
+        maxNorthingUpperOffset_inch = northingUpperHeightDif_pix * inchPerPixel;
+
+        int northingLowerHeightDif_pix = (lowerArrayDist + marginHeight_pix) - halfHeight;
+        maxNorthingLowerOffset_inch = northingLowerHeightDif_pix * inchPerPixel;
+    }
+    else if ((totalWidth + 2*tMarginHeight) > this->height()) {
+        // Give Suppressed Margin
+        int northingUpperHeightDif_pix = -(tMarginHeight - (upperArrayDist + halfHeight));
+        maxNorthingUpperOffset_inch = northingUpperHeightDif_pix * inchPerPixel;
+
+        int northingLowerHeightDif_pix = tMarginHeight - (halfHeight - lowerArrayDist);
+        maxNorthingLowerOffset_inch = northingLowerHeightDif_pix * inchPerPixel;
+    }
+    else {
+        maxNorthingUpperOffset_inch = 0;
+        maxNorthingLowerOffset_inch = 0;
+    }
+
+    if (maxEastingLeftOffset_inch > 0) {
+        maxEastingLeftOffset_inch = 0;
+    }
+
+    if (maxEastingRightOffset_inch < 0) {
+        maxEastingRightOffset_inch = 0;
+    }
+
+    if (maxNorthingUpperOffset_inch > 0) {
+        maxNorthingUpperOffset_inch = 0;
+    }
+
+    if (maxNorthingLowerOffset_inch < 0) {
+        maxNorthingLowerOffset_inch = 0;
+    }
+
+    //debugLine2 = QString("Left: %1 T: %2 HW: %3 E: %4").arg(leftArrayDist).arg(eastingLeftWidthDif_pix).arg(halfWidth).arg(maxEastingLeftOffset_inch);
 }
 
 void MapWindow::updateTileLocations() {
@@ -477,22 +585,20 @@ bool MapWindow::boxWithinView(QRect box, QRect view) {
     return within_flag;
 }
 
-int MapWindow::getTileNorthingOffset(int rowIndex, int columnIndex) {
+QRect MapWindow::getTileRect(int rowIndex, int columnIndex) {
+
+    QRect rRect;
     if (tileArray.length() > columnIndex) {
         if (tileArray.at(columnIndex).length() > rowIndex) {
-
+            rRect = tileArray.at(columnIndex).at(rowIndex)->getBoundingBox();
         }
         else {
-            log->warn(QString("MapWindow.getTileNorthingOffset Unable to get Tile offset. Row Index %1 larger than size %2").arg(rowIndex).arg(tileArray.at(columnIndex).length()));
+            log->warn(QString("MapWindow.getTileRect Unable to get Tile Rect. Row Index %1 larger than size %2").arg(rowIndex).arg(tileArray.at(columnIndex).length()));
         }
     }
     else {
-        log->warn(QString("MapWindow.getTileNorthingOffset Unable to get Tile offset. Column Index %1 larger than size %2").arg(columnIndex).arg(tileArray.length()));
+        log->warn(QString("MapWindow.getTileRect Unable to get Tile Rect. Column Index %1 larger than size %2").arg(columnIndex).arg(tileArray.length()));
     }
 
-    return 0;
-}
-
-int MapWindow::getTileEastingOffset(int rowIndex, int columnIndex) {
-
+    return rRect;
 }
