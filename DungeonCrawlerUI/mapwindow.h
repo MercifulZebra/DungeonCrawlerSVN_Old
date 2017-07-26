@@ -50,12 +50,15 @@ public:
     int getTileArrayColumnCount();
     int getTileArrayRowCount();
 
+    void checkHoveredTile(QMouseEvent *e);
+
     // Coordinate Helper Functions
     void updateMaxOffsets();
     void updateTileLocations();
     double boundOffset(double offset, double lowerBound, double upperBound);
     bool boxWithinView(QRect box, QRect view);
     QRect getTileRect(int rowIndex, int columnIndex);
+    Tile* getTileAt(int x_pix, int y_pix);
 
 private:
     bool setDimensions(int nRows, int nCols);
@@ -87,6 +90,9 @@ private:
 
     int marginWidth_pix;
     int marginHeight_pix;
+
+    //Tile Status
+    Tile *hoveredTile;
 
     //Debugging
     double paintCycleTime_s;

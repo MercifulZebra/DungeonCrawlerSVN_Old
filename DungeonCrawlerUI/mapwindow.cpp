@@ -26,6 +26,7 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     tileHeight_inches(60),
     marginWidth_pix(200),
     marginHeight_pix(200),
+    hoveredTile(NULL),
     paintCycleTime_s(0.0),
     debugLine1(),
     debugLine2(),
@@ -84,6 +85,8 @@ void MapWindow::mouseReleaseEvent(QMouseEvent * /*event*/) {
 void MapWindow::mouseMoveEvent(QMouseEvent *e) {
 
     handleMouseMove(e);
+
+    checkHoveredTile(e);
 
     QOpenGLWidget::mouseMoveEvent(e);
     update();
@@ -331,6 +334,42 @@ int MapWindow::getTileArrayRowCount() {
     return rCount;
 }
 
+void MapWindow::checkHoveredTile(QMouseEvent *e) {
+    int adjustedMousePos_x = e->x() - (this->width() / 2);
+    int adjustedMousePos_y = e->y() - (this->height() / 2);
+
+    bool accepted_flag = false;
+    if (hoveredTile != NULL) {
+        if (hoveredTile->contains(e->x(), e->y())) {
+            accepted_flag = true;
+        }
+        else {
+            hoveredTile->setHovered(false);
+            hoveredTile = NULL;
+        }
+    }
+    if (!accepted_flag) {
+        for (int i = 0; i < tileArray.length() && !accepted_flag; i++) {
+            if (!tileArray.at(i).isEmpty()) {
+
+                int leftBound = tileArray.at(i).at(0)->getBoundingBox().left();
+                int rightBound = tileArray.at(i).at(0)->getBoundingBox().right();
+
+                if ((adjustedMousePos_x > leftBound) && (adjustedMousePos_x < rightBound) ) {
+                    for (int j = 0; j < tileArray.at(i).length() && !accepted_flag; j++) {
+                        Tile *cTile = tileArray.at(i).at(j);
+                        if (cTile->contains(adjustedMousePos_x, adjustedMousePos_y)) {
+                            hoveredTile = cTile;
+                            hoveredTile->setHovered(true);
+                            accepted_flag = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 bool MapWindow::setDimensions(int nRows, int nCols) {
     bool sizeChanged_flag = true;
 
@@ -569,7 +608,6 @@ double MapWindow::boundOffset(double offset, double lowerBound, double upperBoun
 
     return rOffset;
 }
-
 
 bool MapWindow::boxWithinView(QRect box, QRect view) {
     bool within_flag = false;

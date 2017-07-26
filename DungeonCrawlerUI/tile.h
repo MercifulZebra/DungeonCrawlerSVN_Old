@@ -32,12 +32,27 @@ public:
 
     void paintThis(QPainter *painter);
 
+    //Access Functions
+    bool contains(int x_pix, int y_pix);
+
     QRect getBoundingBox();
     void setBoundingBox(QRect nRect);
+
+    void setHovered(bool hovered_flag);
+    void setSelected(bool selected_flag);
+
+    bool isHovered();
+    bool isSelected();
+
 private:
 
     logger::Logger *log;
+
     QRect           boundingBox;
+
+    bool            isHovered_flag;
+    bool            isSelected_flag;
+
 
 signals:
 

@@ -4,7 +4,9 @@
 
 Tile::Tile(QObject *parent) : QObject(parent),
     log(NULL),
-    boundingBox()
+    boundingBox(),
+    isHovered_flag(false),
+    isSelected_flag(false)
 {
 
 }
@@ -18,7 +20,19 @@ bool Tile::init(logger::Logger *nLog) {
 }
 
 void Tile::paintThis(QPainter *painter) {
+    painter->save();
+
+    if (isHovered()) {
+        QBrush tBrush (QColor(255, 0, 0, 130));
+        painter->setBrush(tBrush);
+    }
     painter->drawRect(boundingBox);
+
+    painter->restore();
+}
+
+bool Tile::contains(int x_pix, int y_pix) {
+    return boundingBox.contains(x_pix, y_pix);
 }
 
 QRect Tile::getBoundingBox() {
@@ -27,4 +41,20 @@ QRect Tile::getBoundingBox() {
 
 void Tile::setBoundingBox(QRect nRect) {
     boundingBox = nRect;
+}
+
+void Tile::setHovered(bool hovered_flag) {
+    isHovered_flag = hovered_flag;
+}
+
+void Tile::setSelected(bool selected_flag) {
+    isSelected_flag = selected_flag;
+}
+
+bool Tile::isHovered() {
+    return isHovered_flag;
+}
+
+bool Tile::isSelected() {
+    return isSelected_flag;
 }
