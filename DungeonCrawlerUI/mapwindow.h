@@ -8,6 +8,8 @@
 #include <QPen>
 #include <QBrush>
 
+#include "tileindex.h"
+
 namespace logger {
 class Logger;
 }
@@ -52,6 +54,10 @@ public:
 
     void checkHoveredTile(QPoint position);
 
+    void setSelectedTiles(TileIndex startIndex, TileIndex endIndex);
+    void clearSelectedTiles();
+    QVector<Tile*> getTilesInArea(TileIndex startIndex, TileIndex endIndex);
+
     // Coordinate Helper Functions
     void updateMaxOffsets();
     void updateTileLocations();
@@ -59,9 +65,12 @@ public:
     bool boxWithinView(QRect box, QRect view);
     QRect getTileRect(int rowIndex, int columnIndex);
     Tile* getTileAt(int x_pix, int y_pix);
+    int getRowAt(int y_pix);
+    int getColAt(int x_pix);
 
     // Debugging
     void setDebugLine(int row, QString text);
+
 private:
     bool setDimensions(int nRows, int nCols);
 
@@ -75,6 +84,7 @@ private:
     QVector<Tile*>         tilePool;
 
     QPoint lastMousePosition;
+    TileIndex mousePressStartIndex;
 
     //Coordinate System
     double northingOffset_inch;
@@ -97,6 +107,7 @@ private:
 
     //Tile Status
     Tile *hoveredTile;
+    QVector<Tile*> selectedTiles;
 
     //Debugging
     double paintCycleTime_s;

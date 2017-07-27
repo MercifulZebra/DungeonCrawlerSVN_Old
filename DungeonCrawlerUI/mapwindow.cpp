@@ -15,6 +15,7 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     log(NULL),
     tileArray(),
     lastMousePosition(),
+    mousePressStartIndex(),
     northingOffset_inch(0.0),
     eastingOffset_inch(0.0),
     inchPerPixel(.5),
@@ -29,6 +30,7 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     marginWidth_pix(200),
     marginHeight_pix(200),
     hoveredTile(NULL),
+    selectedTiles(),
     paintCycleTime_s(0.0),
     debugLines(),
     firstPaint_flag(true),
@@ -74,6 +76,13 @@ void MapWindow::mousePressEvent(QMouseEvent *e) {
         else {
             previousMouse_pos = e->pos();
         }
+
+        int adjustedMousePos_x = e->x() - (this->width() / 2);
+        int adjustedMousePos_y = e->y() - (this->height() / 2);
+        mousePressStartIndex.row = getRowAt(adjustedMousePos_y);
+        mousePressStartIndex.col = getColAt(adjustedMousePos_x);
+
+        setSelectedTiles(mousePressStartIndex, mousePressStartIndex);
     }
 
     update();
@@ -81,6 +90,7 @@ void MapWindow::mousePressEvent(QMouseEvent *e) {
 
 void MapWindow::mouseReleaseEvent(QMouseEvent * /*event*/) {
     previousMouse_pos = QPoint(-1, -1);
+    clearSelectedTiles();
 }
 
 void MapWindow::mouseMoveEvent(QMouseEvent *e) {
@@ -119,10 +129,23 @@ void MapWindow::handleMouseMove(QMouseEvent *e) {
     currentMouse_pos = e->pos();
 
     if (e->buttons() == Qt::LeftButton) {
-        northingOffset_inch = northingOffset_inch - ((currentMouse_pos.y() - previousMouse_pos.y()) * inchPerPixel);
-        eastingOffset_inch = eastingOffset_inch - ((currentMouse_pos.x() - previousMouse_pos.x()) * inchPerPixel);
+//        northingOffset_inch = northingOffset_inch - ((currentMouse_pos.y() - previousMouse_pos.y()) * inchPerPixel);
+//        eastingOffset_inch = eastingOffset_inch - ((currentMouse_pos.x() - previousMouse_pos.x()) * inchPerPixel);
 
-        previousMouse_pos = currentMouse_pos;
+//        previousMouse_pos = currentMouse_pos;
+
+        TileIndex tIndex;
+        int adjustedMousePos_x = e->x() - (this->width() / 2);
+        int adjustedMousePos_y = e->y() - (this->height() / 2);
+        tIndex.row = getRowAt(adjustedMousePos_y);
+        tIndex.col = getColAt(adjustedMousePos_x);
+
+        if (tIndex.row == -1 || tIndex.col == -1) {
+            log->info(QString("%1 %2").arg(tIndex.row).arg(tIndex.col));
+        }
+        else {
+            setSelectedTiles(mousePressStartIndex, tIndex);
+        }
     }
 
     northingOffset_inch = boundOffset(northingOffset_inch, maxNorthingUpperOffset_inch, maxNorthingLowerOffset_inch);
@@ -360,25 +383,87 @@ void MapWindow::checkHoveredTile(QPoint position) {
         }
     }
     if (!accepted_flag) {
-        for (int i = 0; i < tileArray.length() && !accepted_flag; i++) {
-            if (!tileArray.at(i).isEmpty()) {
 
-                int leftBound = tileArray.at(i).at(0)->getBoundingBox().left();
-                int rightBound = tileArray.at(i).at(0)->getBoundingBox().right();
+        hoveredTile = getTileAt(adjustedMousePos_x, adjustedMousePos_y);
 
-                if ((adjustedMousePos_x > leftBound) && (adjustedMousePos_x <= rightBound) ) {
-                    for (int j = 0; j < tileArray.at(i).length() && !accepted_flag; j++) {
-                        Tile *cTile = tileArray.at(i).at(j);
-                        if (cTile->contains(adjustedMousePos_x, adjustedMousePos_y)) {
-                            hoveredTile = cTile;
-                            hoveredTile->setHovered(true);
-                            accepted_flag = true;
-                        }
-                    }
+        if (hoveredTile != NULL) {
+            hoveredTile->setHovered(true);
+        }
+//        for (int i = 0; i < tileArray.length() && !accepted_flag; i++) {
+//            if (!tileArray.at(i).isEmpty()) {
+
+//                int leftBound = tileArray.at(i).at(0)->getBoundingBox().left();
+//                int rightBound = tileArray.at(i).at(0)->getBoundingBox().right();
+
+//                if ((adjustedMousePos_x > leftBound) && (adjustedMousePos_x <= rightBound) ) {
+//                    for (int j = 0; j < tileArray.at(i).length() && !accepted_flag; j++) {
+//                        Tile *cTile = tileArray.at(i).at(j);
+//                        if (cTile->contains(adjustedMousePos_x, adjustedMousePos_y)) {
+//                            hoveredTile = cTile;
+//                            hoveredTile->setHovered(true);
+//                            accepted_flag = true;
+//                        }
+//                    }
+//                }
+//            }
+//        }
+    }
+}
+
+void MapWindow::setSelectedTiles(TileIndex startIndex, TileIndex endIndex) {
+    clearSelectedTiles();
+
+    selectedTiles = getTilesInArea(startIndex, endIndex);
+
+    for (int i = 0; i < selectedTiles.count(); i++) {
+        selectedTiles.at(i)->setSelected(true);
+    }
+}
+
+void MapWindow::clearSelectedTiles() {
+    for (int i = 0; i < selectedTiles.count(); i++) {
+        selectedTiles.at(i)->setSelected(false);
+    }
+
+    selectedTiles.clear();
+}
+
+QVector<Tile*> MapWindow::getTilesInArea(TileIndex startIndex, TileIndex endIndex) {
+
+    int lowestCol = startIndex.col;
+    int lowestRow = startIndex.row;
+
+    int highestCol = startIndex.col;
+    int highestRow = startIndex.row;
+
+    QVector<Tile*> rTiles;
+
+    if (startIndex.row > endIndex.row) {
+        lowestRow = endIndex.row;
+    }
+    else {
+        highestRow = endIndex.row;
+    }
+
+    if (startIndex.col > endIndex.col) {
+        lowestCol = endIndex.col;
+    }
+    else {
+        highestCol = endIndex.col;
+    }
+
+    if (tileArray.count() >= highestCol) {
+        for (int i = lowestCol; i < highestCol; i++) {
+            if (tileArray.at(i).count() > highestRow) {
+                for (int j = lowestRow; j < highestRow; j++) {
+                    rTiles.append(tileArray.at(i).at(j));
                 }
             }
         }
     }
+
+    return rTiles;
+
 }
 
 bool MapWindow::setDimensions(int nRows, int nCols) {
@@ -646,6 +731,71 @@ QRect MapWindow::getTileRect(int rowIndex, int columnIndex) {
     }
 
     return rRect;
+}
+
+Tile* MapWindow::getTileAt(int x_pix, int y_pix) {
+
+    bool accepted_flag = false;
+    Tile* rTile = NULL;
+
+    for (int i = 0; i < tileArray.length() && !accepted_flag; i++) {
+        if (!tileArray.at(i).isEmpty()) {
+
+            int leftBound = tileArray.at(i).at(0)->getBoundingBox().left();
+            int rightBound = tileArray.at(i).at(0)->getBoundingBox().right();
+
+            if ((x_pix > leftBound) && (x_pix <= rightBound) ) {
+                for (int j = 0; j < tileArray.at(i).length() && !accepted_flag; j++) {
+                    Tile *cTile = tileArray.at(i).at(j);
+                    if (cTile->contains(x_pix, y_pix)) {
+                        rTile = cTile;
+                        accepted_flag = true;
+                    }
+                }
+            }
+        }
+    }
+
+    return rTile;
+}
+
+int MapWindow::getRowAt(int y_pix) {
+    bool accepted_flag = false;
+    int rIndex = -1;
+
+    if (tileArray.count() > 0) {
+        for (int i = 0; i < tileArray.at(0).count() && !accepted_flag; i++) {
+            int upperBound = tileArray.at(0).at(i)->getBoundingBox().top();
+            int lowerBound = tileArray.at(0).at(i)->getBoundingBox().bottom();
+
+            if ((y_pix > upperBound) && (y_pix <= lowerBound)) {
+                rIndex = i;
+                accepted_flag = true;
+            }
+        }
+    }
+
+    return rIndex;
+}
+
+int MapWindow::getColAt(int x_pix) {
+    bool accepted_flag = false;
+    int rIndex = -1;
+
+    for (int i = 0; i < tileArray.count() && !accepted_flag; i++) {
+        if (!tileArray.at(i).isEmpty()) {
+
+            int leftBound = tileArray.at(i).at(0)->getBoundingBox().left();
+            int rightBound = tileArray.at(i).at(0)->getBoundingBox().right();
+
+            if ((x_pix > leftBound) && (x_pix <= rightBound)) {
+                rIndex = i;
+                accepted_flag = true;
+            }
+        }
+    }
+
+    return rIndex;
 }
 
 void MapWindow::setDebugLine(int row, QString text) {

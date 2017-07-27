@@ -22,10 +22,26 @@ bool Tile::init(logger::Logger *nLog) {
 void Tile::paintThis(QPainter *painter) {
     painter->save();
 
+    QBrush rBrush = painter->brush();
+    QPen rPen = painter->pen();
+
     if (isHovered()) {
         QBrush tBrush (QColor(255, 0, 0, 130));
         painter->setBrush(tBrush);
+        painter->drawRect(boundingBox);
     }
+
+    painter->setBrush(rBrush);
+    if (isSelected()) {
+        QPen sPen;
+        sPen.setWidth(10);
+        sPen.setColor(Qt::yellow);
+        painter->setPen(sPen);
+        painter->drawRect(boundingBox);
+    }
+
+    painter->setBrush(rBrush);
+    painter->setPen(rPen);
     painter->drawRect(boundingBox);
 
     painter->restore();
