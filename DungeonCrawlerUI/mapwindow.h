@@ -60,6 +60,8 @@ public:
     QRect getTileRect(int rowIndex, int columnIndex);
     Tile* getTileAt(int x_pix, int y_pix);
 
+    // Debugging
+    void setDebugLine(int row, QString text);
 private:
     bool setDimensions(int nRows, int nCols);
 
@@ -98,8 +100,7 @@ private:
 
     //Debugging
     double paintCycleTime_s;
-    QString debugLine1;
-    QString debugLine2;
+    QStringList debugLines;
 
     //Painting Tools
     bool firstPaint_flag;

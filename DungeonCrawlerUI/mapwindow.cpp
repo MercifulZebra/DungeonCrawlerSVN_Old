@@ -9,6 +9,7 @@
 #include <QMessageBox>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QStringList>
 
 MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     log(NULL),
@@ -29,8 +30,7 @@ MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     marginHeight_pix(200),
     hoveredTile(NULL),
     paintCycleTime_s(0.0),
-    debugLine1(),
-    debugLine2(),
+    debugLines(),
     firstPaint_flag(true),
     debugTextPen(),
     debugTextFont()
@@ -187,23 +187,28 @@ void MapWindow::paintDebugText(QPainter *painter) {
 
     painter->translate(0, height());
 
-    int dWidth          = 300;
-    int dHeight         = 110;
+    QString line4 = QString("IPP: %1 TWpx: %2").arg(inchPerPixel).arg(tileWidth_inches / inchPerPixel);
+    QString line3 = QString("NumTiles: %1 NumPool: %2").arg(getTileArraySize()).arg(tilePool.length());
+    QString line2 = QString("Mouse Position: (%1, %2) North/East: (%3 / %4)").arg(currentMouse_pos.x()).arg(currentMouse_pos.y()).arg(northingOffset_inch).arg(eastingOffset_inch);
+    QString line1 = QString("Last Paint Cycle Time: %1 s").arg(paintCycleTime_s / 1000, 0, 'g', 3);
+
+    setDebugLine(1, line1);
+    setDebugLine(2, line2);
+    setDebugLine(3, line3);
+    setDebugLine(4, line4);
+
+    QString dText = debugLines.join("\n");
+
+    QFontMetrics fm(painter->font());
+    int pixelHeight = fm.height() * debugLines.count();
+    int pixelWidth = fm.width(dText);
+
+    int dWidth          = pixelWidth; //300;
+    int dHeight         = pixelHeight; //110;
     int dLeftBorder     = 10;
     int dBottomBorder   = 10;
 
     QRect dRect(QPoint(dLeftBorder, -dBottomBorder - dHeight), QPoint(dLeftBorder + dWidth, -dBottomBorder));
-
-    QString line1 = debugLine1;
-    QString line2 = debugLine2;
-    QString line3 = QString("");
-    QString line4 = QString("");
-    QString line5 = QString("IPP: %1 TWpx: %2").arg(inchPerPixel).arg(tileWidth_inches / inchPerPixel);
-    QString line6 = QString("NumTiles: %1 NumPool: %2").arg(getTileArraySize()).arg(tilePool.length());
-    QString line7 = QString("Mouse Position: (%1, %2) North/East: (%3 / %4)").arg(currentMouse_pos.x()).arg(currentMouse_pos.y()).arg(northingOffset_inch).arg(eastingOffset_inch);
-    QString line8 = QString("Last Paint Cycle Time: %1 s").arg(paintCycleTime_s / 1000, 0, 'g', 3);
-
-    QString dText = QString("%1 \n%2 \n%3 \n%4 \n%5 \n%6 \n%7 \n%8").arg(line1).arg(line2).arg(line3).arg(line4).arg(line5).arg(line6).arg(line7).arg(line8);
 
     painter->drawText(dRect, dText);
 
@@ -641,4 +646,12 @@ QRect MapWindow::getTileRect(int rowIndex, int columnIndex) {
     }
 
     return rRect;
+}
+
+void MapWindow::setDebugLine(int row, QString text) {
+    while ((debugLines.count() < row)) {
+        debugLines.prepend("");
+    }
+
+    debugLines[debugLines.count() - (row)] = text;
 }
