@@ -22,6 +22,9 @@ namespace logger {
 
 class QPainter;
 
+class TileSet;
+class TileImage;
+
 class Tile : public QObject
 {
     Q_OBJECT
@@ -47,6 +50,9 @@ public:
 private:
 
     logger::Logger *log;
+
+    TileSet        *activeSet;
+    TileImage      *activeImage;
 
     QRect           boundingBox;
 

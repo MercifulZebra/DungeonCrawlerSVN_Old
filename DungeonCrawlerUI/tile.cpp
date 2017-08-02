@@ -4,6 +4,8 @@
 
 Tile::Tile(QObject *parent) : QObject(parent),
     log(NULL),
+    activeSet(NULL),
+    activeImage(NULL),
     boundingBox(),
     isHovered_flag(false),
     isSelected_flag(false)

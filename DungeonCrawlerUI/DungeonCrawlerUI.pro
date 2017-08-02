@@ -22,6 +22,8 @@ SOURCES += main.cpp\
     flatbutton.cpp \
     mapview.cpp \
     mapwindow.cpp \
+    tileset.cpp \
+    tileimage.cpp \
     tileindex.cpp
 
 HEADERS  += mainwindow.h \
@@ -33,6 +35,9 @@ HEADERS  += mainwindow.h \
     flatbutton.h \
     mapview.h \
     mapwindow.h \
+    tooltypes.h \
+    tileset.h \
+    tileimage.h \
     tileindex.h
 
 FORMS    += mainwindow.ui \

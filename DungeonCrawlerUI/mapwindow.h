@@ -31,6 +31,9 @@ public:
     void wheelEvent(QWheelEvent *e) override;
 
     void handleMouseMove(QMouseEvent *e);
+    void handleMouseMoveShiftLeft(QMouseEvent *e);
+    void handleMouseMoveCtrlLeft(QMouseEvent *e);
+    void handleMouseMoveMiddle(QMouseEvent *e);
     void handleMoveLocation(QMouseEvent *e);
     void handleRightMouseMove(QMouseEvent *e);
     void handleShiftMouseMove(QMouseEvent *e);
@@ -43,6 +46,7 @@ public:
     void paintDebugText(QPainter *painter);
     void paintTiles(QPainter *painter);
     void paintCenterMark(QPainter *painter);
+    void paintScrollBars(QPainter *painter);
 
     //TileArray Management functions
     bool changeSize(int nWidth, int nHeight, bool force_flag = false);

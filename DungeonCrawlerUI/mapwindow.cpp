@@ -14,7 +14,6 @@
 MapWindow::MapWindow(QWidget *parent) : QOpenGLWidget(parent),
     log(NULL),
     tileArray(),
-    lastMousePosition(),
     mousePressStartIndex(),
     northingOffset_inch(0.0),
     eastingOffset_inch(0.0),
@@ -60,6 +59,22 @@ bool MapWindow::initWindow(QString /*config_filename*/, logger::Logger *nLog) {
 
     return initSuccess_flag;
 }
+/*
+ * Controls
+ *
+ * L-Click & Drag -> Move
+ * Shift L-Click & Drag -> Select Area
+ * Ctrl L-Click & Drag -> Add Dragged Tiles to Select
+ *
+ * Right Click -> Deselect Tiles / Current Tool
+ *  Shift Right Click -> Reselect Last Tool
+ *
+ *
+ *
+ *
+ *
+ *
+ */
 
 void MapWindow::mousePressEvent(QMouseEvent *e) {
 
@@ -74,7 +89,7 @@ void MapWindow::mousePressEvent(QMouseEvent *e) {
 
         }
         else {
-            previousMouse_pos = e->pos();
+
         }
 
         int adjustedMousePos_x = e->x() - (this->width() / 2);
@@ -84,6 +99,8 @@ void MapWindow::mousePressEvent(QMouseEvent *e) {
 
         setSelectedTiles(mousePressStartIndex, mousePressStartIndex);
     }
+
+    previousMouse_pos = e->pos();
 
     update();
 }
@@ -95,12 +112,32 @@ void MapWindow::mouseReleaseEvent(QMouseEvent * /*event*/) {
 
 void MapWindow::mouseMoveEvent(QMouseEvent *e) {
 
-    handleMouseMove(e);
 
-    lastMousePosition = e->pos();
+    if (e->buttons() == Qt::LeftButton) {
+        if (QApplication::keyboardModifiers() == Qt::ControlModifier) {
 
-    checkHoveredTile(lastMousePosition);
+        }
+        else if (QApplication::keyboardModifiers() == Qt::ShiftModifier) {
 
+        }
+        else if (QApplication::keyboardModifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
+
+        }
+        else {
+
+        }
+
+    }
+    else if (e->buttons() == Qt::MidButton) {
+        handleMouseMove(e);
+    }
+    else {
+
+    }
+
+    checkHoveredTile(e->pos());
+
+    previousMouse_pos = e->pos();
     QOpenGLWidget::mouseMoveEvent(e);
     update();
 }
@@ -114,10 +151,11 @@ void MapWindow::wheelEvent(QWheelEvent *e) {
     if (inchPerPixel < 0.06) {
         inchPerPixel = 0.06;
     }
+
     updateTileLocations();
     updateMaxOffsets();
 
-    checkHoveredTile(lastMousePosition);
+    checkHoveredTile(previousMouse_pos);
 
     northingOffset_inch = boundOffset(northingOffset_inch, maxNorthingUpperOffset_inch, maxNorthingLowerOffset_inch);
     eastingOffset_inch = boundOffset(eastingOffset_inch, maxEastingLeftOffset_inch, maxEastingRightOffset_inch);
@@ -192,8 +230,9 @@ void MapWindow::paintThis(QPainter *painter, QPaintEvent* pEvent) {
 
     paintBackground(painter, pEvent);
     paintTiles(painter);
-    paintDebugText(painter);
+    paintScrollBars(painter);
     paintCenterMark(painter);
+    paintDebugText(painter);
 
     paintCycleTime_s = timer.elapsed();
 }
@@ -282,6 +321,14 @@ void MapWindow::paintCenterMark(QPainter *painter) {
     painter->drawLine(QPoint(0, 10), QPoint(0, 5));
 
     painter->restore();
+}
+
+void MapWindow::paintScrollBars(QPainter *painter) {
+    int tileArrayWidth_pix = getTileArrayWidthPix();
+    int totalWidth_pix = tileArrayWidth_pix + ((maxEastingRightOffset_inch - maxEastingLeftOffset_inch) / inchPerPixel);
+
+    float percent = float(this->width()) / float(totalWidth_pix);
+
 }
 
 bool MapWindow::changeSize(int nWidth, int nHeight, bool force_flag) {
@@ -610,7 +657,6 @@ void MapWindow::updateMaxOffsets() {
         maxNorthingLowerOffset_inch = 0;
     }
 
-    //debugLine2 = QString("Left: %1 T: %2 HW: %3 E: %4").arg(leftArrayDist).arg(eastingLeftWidthDif_pix).arg(halfWidth).arg(maxEastingLeftOffset_inch);
 }
 
 void MapWindow::updateTileLocations() {
